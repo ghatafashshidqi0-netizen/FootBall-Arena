@@ -1,1 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>FOOTBALL ARENA ONLINE</title>
 
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+body{
+  margin:0;background:#08111f;color:white;
+  font-family:Arial,Helvetica,sans-serif;
+  overflow:hidden;touch-action:pan-y
+}
+button,input{font:inherit}
+button{
+  border:0;border-radius:12px;padding:13px 17px;
+  background:#13d98b;color:#061b15;font-weight:900;
+  cursor:pointer;touch-action:manipulation
+}
+button:active{filter:brightness(.8)}
+input{
+  width:100%;padding:14px;border:1px solid #34465f;
+  border-radius:12px;background:#101c2d;color:white;
+  outline:none
+}
+#app{min-height:100dvh}
+.topbar{
+  height:58px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;background:#101c2d;border-bottom:1px solid #26364b
+}
+.logo{font-weight:1000;letter-spacing:1px;color:#25eaa0}
+.status{font-size:12px;color:#a6b8cb}
+.screen{padding:18px;max-width:650px;margin:auto}
+.panel{
+  background:#101c2d;border:1px solid #293c54;
+  border-radius:18px;padding:20px;margin-top:18px
+}
+h1{font-size:30px;line-height:1.1;margin:10px 0}
+h2{font-size:19px;margin:0 0 12px}
+p{color:#a9bad0;line-height:1.5;font-size:14px}
+.field{margin:14px 0}
+.field label{display:block;font-size:12px;color:#a9bad0;margin-bottom:7px}
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+.full{width:100%;margin-top:10px}
+.secondary{background:#263950;color:white}
+#gameScreen{display:none;height:calc(100dvh - 58px);position:relative}
+#gameCanvas{display:block;width:100%;height:100%;background:#167847}
+.hud{
+  position:absolute;top:10px;left:10px;right:10px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  pointer-events:none;gap:8px
+}
+.hudbox{
+  background:#08111fe8;border:1px solid #ffffff20;
+  padding:9px 12px;border-radius:12px;font-size:12px
+}
+#score{font-size:22px;font-weight:1000;text-align:center}
+#gameMessage{
+  position:absolute;top:75px;left:50%;transform:translateX(-50%);
+  background:#08111fe8;border-radius:10px;padding:9px 12px;
+  font-size:12px;white-space:nowrap;pointer-events:none
+}
+#leaveBtn{pointer-events:auto;padding:9px 11px;background:#e34c64;color:white}
+.controls{
+  position:absolute;left:0;right:0;bottom:12px;
+  display:flex;justify-content:space-between;align-items:end;
+  padding:0 15px;pointer-events:none
+}
+.controls button{pointer-events:auto;user-select:none;-webkit-user-select:none}
+#stickArea{
+  width:124px;height:124px;border-radius:50%;
+  background:#08111f88;border:2px solid #ffffff55;
+  position:relative;touch-action:none;pointer-events:auto;
+  flex-shrink:0
+}
+#stick{
+  width:48px;height:48px;border-radius:50%;
+  position:absolute;left:36px;top:36px;
+  background:#ffffffdd;border:3px solid #13d98b;
+  pointer-events:none
+}
+.actionGroup{
+  display:grid;grid-template-columns:repeat(2,68px);
+  gap:9px;pointer-events:auto
+}
+.actionGroup button{
+  width:68px;height:57px;padding:4px;
+  border-radius:15px;background:#10253c;color:white;
+  border:1px solid #ffffff40;font-size:11px
+}
+.actionGroup button.main{background:#13d98b;color:#052016}
+.actionGroup button.sprint{background:#f5b942;color:#241800}
+.actionGroup button.tackle{background:#e34c64;color:white}
+.smallNote{font-size:11px;color:#8297b1}
+@media(min-width:800px){
+  .controls{padding:0 35px 20px}
+  #stickArea{width:145px;height:145px}
+  #stick{left:46px;top:46px}
+  .actionGroup{grid-template-columns:repeat(2,82px)}
+  .actionGroup button{width:82px;height:62px}
+}
+@media(max-height:500px){
+  .controls{bottom:5px}
+  #stickArea{width:94px;height:94px}
+  #stick{width:40px;height:40px;left:25px;top:25px}
+  .actionGroup{grid-template-columns:repeat(2,61px);gap:5px}
+  .actionGroup button{width:61px;height:43px}
+  .hud{top:5px}
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="logo">⚽ FOOTBALL ARENA</div>
+    <div class="status" id="connection">Menghubungkan...</div>
+  </header>
+
+  <section id="lobby" class="screen">
+    <div class="panel">
+      <div style="color:#13d98b;font-size:12px;font-weight:bold">ONLINE MULTIPLAYER</div>
+      <h1>MAIN BOLA.<br>MENANG BARENG.</h1>
+      <p>Buat room sendiri atau masukkan kode room teman untuk bermain bersama secara online.</p>
+
+      <div class="field">
+        <label>NAMA PEMAIN</label>
+        <input id="playerName" maxlength="16" placeholder="Masukkan nama pemain">
+      </div>
+
+      <div class="field">
+        <label>KODE ROOM</label>
+        <input id="roomCode" maxlength="10" placeholder="Contoh: BOLA123">
+      </div>
+
+      <button id="joinBtn" class="full">GABUNG / BUAT ROOM</button>
+      <p id="lobbyMessage">Pastikan server game sudah berjalan.</p>
+    </div>
+
+    <div class="panel">
+      <h2>🎮 Kontrol Game</h2>
+      <p>
+        <b>HP:</b> gunakan joystick untuk bergerak. Tombol PASS, SHOOT,
+        SPRINT, dan TACKLE berada di kanan layar.
+      </p>
+      <p>
+        <b>PC:</b> WASD atau tombol panah untuk bergerak.
+        Spasi untuk menendang, Shift untuk sprint, E untuk tackle,
+        dan Q untuk mengoper.
+      </p>
+      <div class="smallNote">Game membutuhkan koneksi internet dan server Socket.IO yang aktif.</div>
+    </div>
+  </section>
+
+  <section id="gameScreen">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="hud">
+      <div class="hudbox">
+        <div id="roomLabel">ROOM: --</div>
+        <div id="playerCount">Pemain: 0</div>
+      </div>
+      <div class="hudbox">
+        <div id="score">0 - 0</div>
+        <div id="timer" style="text-align:center">ONLINE MATCH</div>
+      </div>
+      <button id="leaveBtn">KELUAR</button>
+    </div>
+
+    <div id="gameMessage">Menunggu pemain...</div>
+
+    <div class="controls">
+      <div id="stickArea"><div id="stick"></div></div>
+      <div class="actionGroup">
+        <button id="passBtn">↗ PASS<br>Q</button>
+        <button id="shootBtn" class="main">⚽ SHOOT<br>SPASI</button>
+        <button id="sprintBtn" class="sprint">⚡ SPRINT<br>SHIFT</button>
+        <button id="tackleBtn" class="tackle">✦ TACKLE<br>E</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const socket = io();
+
+  const lobby = $("lobby");
+  const gameScreen = $("gameScreen");
+  const canvas = $("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  let joined = false;
+  let roomCode = "";
+  let gameState = {};
+  let lastStateTime = 0;
+  let keys = {};
+  let joystick = {x:0,y:0};
+  let sprinting = false;
+  let activePointer = null;
+  let fieldWidth = 1000;
+  let fieldHeight = 600;
+  let lastInputSend = 0;
+
+  const connection = $("connection");
+  const lobbyMessage = $("lobbyMessage");
+  const message = $("gameMessage");
+
+  socket.on("connect", () => {
+    connection.textContent = "● ONLINE";
+    connection.style.color = "#13d98b";
+    lobbyMessage.textContent = "Terhubung ke server. Kamu bisa masuk ke room.";
+  });
+
+  socket.on("disconnect", () => {
+    connection.textContent = "● TERPUTUS";
+    connection.style.color = "#ff697b";
+    lobbyMessage.textContent = "Koneksi terputus. Coba muat ulang halaman.";
+  });
+
+  socket.on("connect_error", () => {
+    connection.textContent = "● SERVER OFFLINE";
+    lobbyMessage.textContent = "Server belum dapat dihubungi. Periksa URL dan status server.";
+  });
+
+  $("joinBtn").addEventListener("click", () => {
+    if (!socket.connected) {
+      lobbyMessage.textContent = "Server belum terhubung. Tunggu sebentar atau muat ulang.";
+      return;
+    }
+
+    const name = $("playerName").value.trim() || "Player";
+    const requestedRoom = $("roomCode").value.trim().toUpperCase();
+
+    socket.emit("joinRoom", {
+      name: name,
+      roomCode: requestedRoom
+    });
+
+    lobbyMessage.textContent = "Memproses room...";
+    $("joinBtn").disabled = true;
+    setTimeout(() => $("joinBtn").disabled = false, 1500);
+  });
+
+  socket.on("roomError", data => {
+    lobbyMessage.textContent =
+      typeof data === "string" ? data : (data?.message || "Tidak bisa masuk ke room.");
+  });
+
+  socket.on("joined", data => {
+    joined = true;
+    roomCode = data?.roomCode || data?.room || $("roomCode").value.trim().toUpperCase() || "ONLINE";
+    $("roomLabel").textContent = "ROOM: " + roomCode;
+
+    lobby.style.display = "none";
+    gameScreen.style.display = "block";
+    resizeCanvas();
+
+    message.textContent = "Berhasil masuk! Tunggu pemain lain...";
+    setTimeout(() => {
+      if (message.textContent.startsWith("Berhasil masuk")) {
+        message.textContent = "Gunakan joystick atau WASD untuk bergerak";
+      }
+    }, 3000);
+  });
+
+  socket.on("state", state => {
+    if (!state) return;
+    gameState = state;
+    lastStateTime = performance.now();
+
+    const score = state.score || state.scores || {};
+    if (Array.isArray(score)) {
+      $("score").textContent = (score[0] || 0) + " - " + (score[1] || 0);
+    } else {
+      const left = score.left ?? score.blue ?? score.team1 ?? score.home ?? 0;
+      const right = score.right ?? score.red ?? score.team2 ?? score.away ?? 0;
+      $("score").textContent = left + " - " + right;
+    }
+
+    const players = state.players;
+    if (Array.isArray(players)) {
+      $("playerCount").textContent = "Pemain: " + players.length;
+    } else if (players && typeof players === "object") {
+      $("playerCount").textContent = "Pemain: " + Object.keys(players).length;
+    }
+
+    if (state.time !== undefined) {
+      $("timer").textContent = formatTime(state.time);
+    } else if (state.timer !== undefined) {
+      $("timer").textContent = formatTime(state.timer);
+    }
+
+    if (state.message) message.textContent = state.message;
+  });
+
+  function formatTime(value) {
+    const n = Math.max(0, Math.floor(Number(value) || 0));
+    if (n > 3600) return Math.floor(n / 60) + ":" + String(n % 60).padStart(2, "0");
+    return Math.floor(n / 60) + ":" + String(n % 60).padStart(2, "0");
+  }
+
+  $("leaveBtn").addEventListener("click", () => {
+    joined = false;
+    joystick.x = 0;
+    joystick.y = 0;
+    keys = {};
+    sprinting = false;
+    socket.disconnect();
+    socket.connect();
+    gameScreen.style.display = "none";
+    lobby.style.display = "block";
+    lobbyMessage.textContent = "Kamu keluar dari tampilan pertandingan. Masuk kembali untuk bermain.";
+  });
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+
+  // Joystick: kontrol bergerak tetap aktif meski jari diangkat dari tombol aksi.
+  const stickArea = $("stickArea");
+  const stick = $("stick");
+
+  function updateStick(event) {
+    const rect = stickArea.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = event.clientX - cx;
+    let dy = event.clientY - cy;
+    const max = rect.width * 0.34;
+    const length = Math.hypot(dx, dy);
+
+    if (length > max) {
+      dx = dx / length * max;
+      dy = dy / length * max;
+    }
+
+    joystick.x = dx / max;
+    joystick.y = dy / max;
+    stick.style.left = (rect.width / 2 - 24 + dx) + "px";
+    stick.style.top = (rect.height / 2 - 24 + dy) + "px";
+  }
+
+  function resetStick() {
+    joystick.x = 0;
+    joystick.y = 0;
+    activePointer = null;
+    stick.style.left = (stickArea.clientWidth / 2 - 24) + "px";
+    stick.style.top = (stickArea.clientHeight / 2 - 24) + "px";
+  }
+
+  stickArea.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (activePointer !== null) return;
+    activePointer = event.pointerId;
+    stickArea.setPointerCapture(event.pointerId);
+    updateStick(event);
+  });
+
+  stickArea.addEventListener("pointermove", event => {
+    if (event.pointerId !== activePointer) return;
+    event.preventDefault();
+    updateStick(event);
+  });
+
+  stickArea.addEventListener("pointerup", event => {
+    if (event.pointerId === activePointer) resetStick();
+  });
+
+  stickArea.addEventListener("pointercancel", resetStick);
+  stickArea.addEventListener("lostpointercapture", resetStick);
+
+  // Tombol aksi terpisah dari joystick; menahan tombol tidak mengunci gerakan.
+  function bindAction(id, action, hold = false) {
+    const button = $(id);
+    let pointer = null;
+
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      if (pointer !== null) return;
+      pointer = event.pointerId;
+      button.setPointerCapture(event.pointerId);
+      if (hold) {
+        sprinting = true;
+      } else {
+        socket.emit("attack", {type: action});
+      }
+    });
+
+    const release = event => {
+      if (pointer !== event.pointerId) return;
+      pointer = null;
+      if (hold) sprinting = false;
+    };
+
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", release);
+    button.addEventListener("contextmenu", event => event.preventDefault());
+  }
+
+  bindAction("passBtn", "pass");
+  bindAction("shootBtn", "shoot");
+  bindAction("sprintBtn", "sprint", true);
+  bindAction("tackleBtn", "tackle");
+
+  // Keyboard PC.
+  window.addEventListener("keydown", event => {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
+      event.preventDefault();
+    }
+
+    keys[event.key.toLowerCase()] = true;
+
+    if (event.repeat) return;
+    if (event.code === "Space") socket.emit("attack", {type:"shoot"});
+    if (event.key.toLowerCase() === "q") socket.emit("attack", {type:"pass"});
+    if (event.key.toLowerCase() === "e") socket.emit("attack", {type:"tackle"});
+    if (event.key === "Shift") sprinting = true;
+  });
+
+  window.addEventListener("keyup", event => {
+    keys[event.key.toLowerCase()] = false;
+    if (event.key === "Shift") sprinting = false;
+  });
+
+  window.addEventListener("blur", () => {
+    keys = {};
+    sprinting = false;
+    resetStick();
+  });
+
+  function sendInput() {
+    if (!joined || !socket.connected) return;
+
+    let x = joystick.x;
+    let y = joystick.y;
+
+    if (keys["a"] || keys["arrowleft"]) x -= 1;
+    if (keys["d"] || keys["arrowright"]) x += 1;
+    if (keys["w"] || keys["arrowup"]) y -= 1;
+    if (keys["s"] || keys["arrowdown"]) y += 1;
+
+    const length = Math.hypot(x, y);
+    if (length > 1) {
+      x /= length;
+      y /= length;
+    }
+
+    const now = performance.now();
+    if (now - lastInputSend < 33) return;
+    lastInputSend = now;
+
+    socket.emit("input", {
+      x: x,
+      y: y,
+      sprint: sprinting
+    });
+  }
+
+  function getPlayers() {
+    const players = gameState.players;
+    if (Array.isArray(players)) return players;
+    if (players && typeof players === "object") return Object.values(players);
+    return [];
+  }
+
+  function getPosition(object) {
+    if (!object) return {x:0,y:0};
+    return {
+      x: Number(object.x ?? object.position?.x ?? 0),
+      y: Number(object.y ?? object.position?.y ?? 0)
+    };
+  }
+
+  function drawField(w, h) {
+    ctx.fillStyle = "#167847";
+    ctx.fillRect(0, 0, w, h);
+
+    const margin = Math.max(18, w * 0.035);
+    const top = Math.max(40, h * 0.09);
+    const bottom = h - Math.max(28, h * 0.07);
+    const left = margin;
+    const right = w - margin;
+    const midX = w / 2;
+    const midY = (top + bottom) / 2;
+
+    for (let i = 0; i < 10; i++) {
+      ctx.fillStyle = i % 2 ? "#167847" : "#19834c";
+      ctx.fillRect(left + (right-left)*i/10, top, (right-left)/10, bottom-top);
+    }
+
+    ctx.strokeStyle = "#ffffffcc";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(left, top, right-left, bottom-top);
+    ctx.beginPath();
+    ctx.moveTo(midX, top);
+    ctx.lineTo(midX, bottom);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(midX, midY, Math.min(w,h)*0.12, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffffcc";
+    ctx.beginPath();
+    ctx.arc(midX, midY, 3, 0, Math.PI*2);
+    ctx.fill();
+
+    const boxW = (right-left)*0.16;
+    const boxH = (bottom-top)*0.44;
+    ctx.strokeRect(left, midY-boxH/2, boxW, boxH);
+    ctx.strokeRect(right-boxW, midY-boxH/2, boxW, boxH);
+
+    const goalH = (bottom-top)*0.22;
+    ctx.strokeRect(left-4, midY-goalH/2, 5, goalH);
+    ctx.strokeRect(right-1, midY-goalH/2, 5, goalH);
+  }
+
+  function drawPlayer(player, index, w, h) {
+    const p = getPosition(player);
+    const x = p.x;
+    const y = p.y;
+    const maxX = fieldWidth || 1000;
+    const maxY = fieldHeight || 600;
+
+    // Koordinat server dinormalisasi ke ukuran layar.
+    const px = x >= 0 && x <= 1 ? x*w : x/maxX*w;
+    const py = y >= 0 && y <= 1 ? y*h : y/maxY*h;
+
+    const color = player.color ||
+      (player.team === "red" || player.team === 1 || player.team === "B" ? "#ff5369" : "#40c8ff");
+
+    ctx.fillStyle = "#00000055";
+    ctx.beginPath();
+    ctx.ellipse(px, py+7, 13, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(px, py, 12, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 10px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(String(player.name || "P" + (index+1)).slice(0,12), px, py-18);
+  }
+
+  function drawBall(w, h) {
+    const ball = gameState.ball;
+    if (!ball) return;
+
+    const p = getPosition(ball);
+    const px = p.x >= 0 && p.x <= 1 ? p.x*w : p.x/(fieldWidth||1000)*w;
+    const py = p.y >= 0 && p.y <= 1 ? p.y*h : p.y/(fieldHeight||600)*h;
+
+    ctx.fillStyle = "#00000055";
+    ctx.beginPath();
+    ctx.ellipse(px+2, py+5, 8, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(px, py, 7, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#182334";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function render() {
+    requestAnimationFrame(render);
+    sendInput();
+
+    if (gameScreen.style.display === "none") return;
+
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (!w || !h) return;
+
+    // Fallback jika state server belum memiliki dimensi lapangan.
+    fieldWidth = Number(gameState.width || gameState.fieldWidth || 1000);
+    fieldHeight = Number(gameState.height || gameState.fieldHeight || 600);
+
+    drawField(w, h);
+
+    const players = getPlayers();
+    players.forEach((player, index) => drawPlayer(player, index, w, h));
+    drawBall(w, h);
+
+    if (joined && performance.now() - lastStateTime > 6000) {
+      message.textContent = "Menunggu data pertandingan dari server...";
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+  </html>
