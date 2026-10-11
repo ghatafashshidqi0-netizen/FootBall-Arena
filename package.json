@@ -1,0 +1,15 @@
+
+{
+  "name": "football-arena-online",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer 2D football game with rooms",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
